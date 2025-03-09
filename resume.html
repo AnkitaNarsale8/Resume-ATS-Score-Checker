@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume ATS Score Checker</title>
+    <style>
+        :root {
+            --primary: #4a6bdf;
+            --primary-dark: #3a56b8;
+            --secondary: #6c757d;
+            --success: #28a745;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--secondary);
+            font-weight: normal;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(74, 107, 223, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            margin-bottom: 1rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .file-details {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: var(--primary);
+        }
+
+        .file-info {
+            flex-grow: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .file-size {
+            font-size: 0.875rem;
+            color: var(--secondary);
+        }
+
+        .remove-file {
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        #submitBtn {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1.1rem;
+            display: none;
+        }
+
+        #loadingIndicator {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(74, 107, 223, 0.2);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #resultSection {
+            display: none;
+        }
+
+        .score-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 10px solid #f3f3f3;
+            margin: 0 auto 1rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .score-text {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .score-desc {
+            color: var(--secondary);
+        }
+
+        .feedback-section h3 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .feedback-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .feedback-item h4 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .feedback-icon {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .neutral {
+            color: var(--secondary);
+        }
+
+        .feedback-content {
+            padding-left: 1.7rem;
+        }
+
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .keyword {
+            background-color: #e9ecef;
+            border-radius: 16px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .keyword.match {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+
+        .keyword.missing {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+
+        #newUploadBtn {
+            margin-top: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--secondary);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .score-circle {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .score-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Resume ATS Score Checker</h1>
+            <p class="subtitle">Optimize your resume for Applicant Tracking Systems</p>
+        </header>
+
+        <main>
+            <div class="card" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <h3 class="upload-text">Drag & drop your resume or click to browse</h3>
+                    <p>Supported formats: PDF, DOCX, TXT (Max 5MB)</p>
+                    <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt">
+                    <button class="btn btn-primary" id="browseBtn">Browse Files</button>
+                </div>
+
+                <div class="file-details" id="fileDetails">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <div class="file-name" id="fileName">resume.pdf</div>
+                        <div class="file-size" id="fileSize">245 KB</div>
+                    </div>
+                    <div class="remove-file" id="removeFile">×</div>
+                </div>
+
+                <button class="btn btn-primary" id="submitBtn">Analyze Resume</button>
+            </div>
+
+            <div id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Analyzing your resume...</p>
+            </div>
+
+            <div class="card" id="resultSection">
+                <div class="score-container">
+                    <div class="score-circle" id="scoreCircle">
+                        <span class="score-value" id="scoreValue">85</span>
+                    </div>
+                    <h2 class="score-text">ATS Compatibility Score</h2>
+                    <p class="score-desc" id="scoreDescription">Your resume is well-optimized for ATS systems!</p>
+                </div>
+
+                <div class="feedback-section">
+                    <h3>Detailed Feedback</h3>
+                    <div id="feedbackContainer">
+                        <!-- Feedback items will be inserted here -->
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="newUploadBtn">Check Another Resume</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 Resume ATS Score Checker. This tool provides an estimation of ATS compatibility and should be used as a guide only.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const fileDetails = document.getElementById('fileDetails');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const removeFile = document.getElementById('removeFile');
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultSection = document.getElementById('resultSection');
+            const uploadSection = document.getElementById('uploadSection');
+            const scoreValue = document.getElementById('scoreValue');
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreDescription = document.getElementById('scoreDescription');
+            const feedbackContainer = document.getElementById('feedbackContainer');
+            const newUploadBtn = document.getElementById('newUploadBtn');
+
+            let currentFile = null;
+
+            // Event Listeners
+            browseBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            removeFile.addEventListener('click', resetUpload);
+            
+            submitBtn.addEventListener('click', analyzeResume);
+            
+            newUploadBtn.addEventListener('click', () => {
+                resultSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+                resetUpload();
+            });
+
+            // Functions
+            function handleFileSelect(e) {
+                if (fileInput.files.length) {
+                    handleFile(fileInput.files[0]);
+                }
+            }
+
+            function handleFile(file) {
+                // Check file type
+                const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload a valid resume file (PDF, DOCX, or TXT)');
+                    return;
+                }
+
+                // Check file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size exceeds 5MB limit');
+                    return;
+                }
+
+                currentFile = file;
+                
+                // Update UI
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileDetails.style.display = 'flex';
+                submitBtn.style.display = 'block';
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' bytes';
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                else return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+
+            function resetUpload() {
+                fileInput.value = '';
+                fileDetails.style.display = 'none';
+                submitBtn.style.display = 'none';
+                currentFile = null;
+            }
+
+            function analyzeResume() {
+                if (!currentFile) return;
+                
+                // Show loading indicator
+                uploadSection.style.display = 'none';
+                loadingIndicator.style.display = 'block';
+                
+                // Simulate file processing and analysis
+                // In a real application, you would send the file to a server for processing
+                setTimeout(() => {
+                    processResumeResults(generateMockResults());
+                    
+                    loadingIndicator.style.display = 'none';
+                    resultSection.style.display = 'block';
+                }, 2500);
+            }
+
+            function generateMockResults() {
+                // This function simulates the analysis results
+                // In a real application, this would come from your backend
+                
+                const score = Math.floor(Math.random() * 31) + 70; // Random score between 70-100
+                
+                const keywordMatches = [
+                    {keyword: "project management", match: true},
+                    {keyword: "agile", match: true},
+                    {keyword: "leadership", match: true},
+                    {keyword: "communication", match: true},
+                    {keyword: "Python", match: Math.random() > 0.5},
+                    {keyword: "data analysis", match: Math.random() > 0.5},
+                    {keyword: "JavaScript", match: Math.random() > 0.5},
+                    {keyword: "teamwork", match: true},
+                    {keyword: "problem solving", match: true},
+                    {keyword: "budget management", match: Math.random() > 0.3},
+                ];
+                
+                const formatIssues = [];
+                if (Math.random() > 0.7) formatIssues.push("Complex formatting may cause parsing issues");
+                if (Math.random() > 0.6) formatIssues.push("Headers and footers might not be properly parsed");
+                if (Math.random() > 0.8) formatIssues.push("Tables detected which may not parse correctly");
+                
+                const contentSuggestions = [];
+                if (Math.random() > 0.5) contentSuggestions.push("Consider adding more measurable achievements");
+                if (Math.random() > 0.6) contentSuggestions.push("Work experience section could be more detailed");
+                if (Math.random() > 0.7) contentSuggestions.push("Education section could be more prominent");
+                if (Math.random() > 0.6) contentSuggestions.push("Skills section could be expanded with relevant technical skills");
+                
+                return {
+                    score,
+                    keywordMatches,
+                    formatIssues: formatIssues.length > 0 ? formatIssues : ["No major formatting issues detected"],
+                    contentSuggestions: contentSuggestions.length > 0 ? contentSuggestions : ["Content is well-structured and comprehensive"]
+                };
+            }
+
+            function processResumeResults(results) {
+                // Update score and description
+                scoreValue.textContent = results.score;
+                
+                // Set color based on score
+                let color;
+                let description;
+                
+                if (results.score >= 90) {
+                    color = '#28a745'; // Green
+                    description = 'Excellent! Your resume is highly optimized for ATS systems.';
+                } else if (results.score >= 80) {
+                    color = '#5cb85c'; // Light Green
+                    description = 'Very good! Your resume is well-optimized for ATS systems.';
+                } else if (results.score >= 70) {
+                    color = '#ffc107'; // Yellow
+                    description = 'Good. Your resume will pass most ATS systems but could use some improvements.';
+                } else {
+                    color = '#dc3545'; // Red
+                    description = 'Needs improvement. Your resume may be rejected by some ATS systems.';
+                }
+                
+                scoreCircle.style.borderColor = color;
+                scoreDescription.textContent = description;
+                
+                // Clear previous feedback
+                feedbackContainer.innerHTML = '';
+                
+                // Add keyword feedback
+                const keywordMatched = results.keywordMatches.filter(k => k.match);
+                const keywordMissing = results.keywordMatches.filter(k => !k.match);
+                
+                const keywordFeedback = document.createElement('div');
+                keywordFeedback.className = 'feedback-item';
+                keywordFeedback.innerHTML = `
+                    <h4><span class="feedback-icon ${keywordMatched.length > keywordMissing.length ? 'positive' : 'neutral'}">✓</span> Keyword Matching</h4>
+                    <div class="feedback-content">
+                        <p>Your resume matches ${keywordMatched.length} out of ${results.keywordMatches.length} important keywords for your target role.</p>
+                        <div class="keyword-list">
+                            ${results.keywordMatches.map(k => `<span class="keyword ${k.match ? 'match' : 'missing'}">${k.keyword}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                feedbackContainer.appendChild(keywordFeedback);
+                
+                // Add format feedback
+                const formatFeedback = document.createElement('div');
+                formatFeedback.className = 'feedback-item';
+                formatFeedback.innerHTML = `
+                    <h4><span class="feedback-icon ${results.formatIssues[0].startsWith('No') ? 'positive' : 'negative'}">
+                        ${results.formatIssues[0].startsWith('No') ? '✓' : '⚠'}
+                    </span> Formatting Issues</h4>
+                    <div class="feedback-content">
+                        <ul>
+                            ${results.formatIssues.map(issue => `<li>${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                feedbackContainer.appendChild(formatFeedback);
+                
+                // Add content feedback
+                const contentFeedback = document.createElement('div');
+                contentFeedback.className = 'feedback-item';
+                contentFeedback.innerHTML = `
+                    <h4><span class="feedback-icon ${results.contentSuggestions[0].startsWith('Content') ? 'positive' : 'neutral'}">
+                        ${results.contentSuggestions[0].startsWith('Content') ? '✓' : 'ℹ'}
+                    </span> Content Suggestions</h4>
+                    <div class="feedback-content">
+                        <ul>
+                            ${results.contentSuggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                feedbackContainer.appendChild(contentFeedback);
+            }
+        });
+    </script>
+</body>
+</html>
